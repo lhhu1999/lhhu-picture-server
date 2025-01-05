@@ -9,7 +9,7 @@ spring:
     #数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/lhhu_picture
+    url: jdbc:mysql://localhost:3306/hu_picture
     username: root
     password: 123456
 
