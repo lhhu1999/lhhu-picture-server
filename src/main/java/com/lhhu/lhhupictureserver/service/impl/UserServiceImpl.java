@@ -1,23 +1,31 @@
 package com.lhhu.lhhupictureserver.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.lhhu.lhhupictureserver.constant.UserConstant;
 import com.lhhu.lhhupictureserver.exception.BusinessException;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
 import com.lhhu.lhhupictureserver.model.entity.User;
 import com.lhhu.lhhupictureserver.model.enums.UserRoleEnum;
+import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
 import com.lhhu.lhhupictureserver.service.UserService;
 import com.lhhu.lhhupictureserver.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import javax.servlet.http.HttpServletRequest;
+
 
 /**
 * @author Huaihu Li
 * @description 针对表【user(用户)】的数据库操作Service实现
 * @createDate 2025-01-05 14:33:47
 */
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
@@ -50,7 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         ThrowUtils.throwIf(count>0, ErrorCode.PARAMS_ERROR, "账号已存在");
 
         // 3. 密码加密
-        String encryptPassword = getEncryptPassword(userAccount);
+        String encryptPassword = getEncryptPassword(userPassword);
 
         // 4. 插入数据到数据库
         User user = new User();
@@ -63,6 +71,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return user.getId();
     }
 
+
+    /**
+     * 用户登录
+     * @param userAccount 账号
+     * @param userPassword 密码
+     * @param request
+     * @return
+     */
+    @Override
+    public LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+        // 1. 校验参数
+        if(StrUtil.hasBlank(userAccount, userPassword)){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
+        }
+        ThrowUtils.throwIf(userAccount.length() < 4, ErrorCode.PARAMS_ERROR, "用户账号错误");
+        ThrowUtils.throwIf(userPassword.length() < 6, ErrorCode.PARAMS_ERROR, "用户密码错误");
+
+        // 2. 对用户密码加密
+        String encryptPassword = getEncryptPassword(userPassword);
+
+        // 3. 查询数据库验证用户是否存在
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userAccount", userAccount);
+        queryWrapper.eq("userPassword", encryptPassword);
+        User user = this.baseMapper.selectOne(queryWrapper);
+        if(user == null){
+            log.info("userAccount not exist or userPassword not correct");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号不存在或密码错误");
+        }
+
+        // 4. 保存用户登陆态
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        return this.getLoginUserVO(user);
+    }
+
     /**
      * 加密密码
      * @param userPassword
@@ -73,6 +116,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 加盐， 混淆密码
         final String SALT = "lhhu";
         return DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
+    }
+
+    /**
+     * 复制属性
+     * @param user
+     * @return
+     */
+    @Override
+    public LoginUserVO getLoginUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        LoginUserVO loginUserVO = new LoginUserVO();
+        BeanUtil.copyProperties(user, loginUserVO);
+        return loginUserVO;
     }
 }
 
