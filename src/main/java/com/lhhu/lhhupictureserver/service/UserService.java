@@ -1,6 +1,5 @@
 package com.lhhu.lhhupictureserver.service;
 
-import cn.hutool.http.server.HttpServerRequest;
 import com.lhhu.lhhupictureserver.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
@@ -44,4 +43,18 @@ public interface UserService extends IService<User> {
      * @return
      */
     LoginUserVO getLoginUserVO(User user);
+
+    /**
+     * 获取当前登录用户
+     * @param request
+     * @return
+     */
+    User getLoginUser(HttpServletRequest request);
+
+    /**
+     * 用户退出登录
+     * @param request
+     * @return
+     */
+    boolean userLoginOut(HttpServletRequest request);
 }

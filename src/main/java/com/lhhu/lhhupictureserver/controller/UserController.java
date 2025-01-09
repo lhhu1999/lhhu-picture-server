@@ -6,6 +6,7 @@ import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
 import com.lhhu.lhhupictureserver.model.dto.UserLoginRequest;
 import com.lhhu.lhhupictureserver.model.dto.UserRegisterRequest;
+import com.lhhu.lhhupictureserver.model.entity.User;
 import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
 import com.lhhu.lhhupictureserver.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -43,5 +44,25 @@ public class UserController {
         String userPassword = userLoginRequest.getUserPassword();
         LoginUserVO loginUserVO = userService.userLogin(userAccount, userPassword, request);
         return ResultUtils.success(loginUserVO);
+    }
+
+    /**
+     * 获取当前登录用户
+     * @return
+     */
+    @GetMapping("/get/login")
+    public BaseResponse<LoginUserVO> getLoginUser(HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(userService.getLoginUserVO(loginUser));
+    }
+
+    /**
+     * 用户退出登录
+     */
+    @PostMapping("/loginOut")
+    public BaseResponse<Boolean> userLoginOut(HttpServletRequest request) {
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        boolean result = userService.userLoginOut(request);
+        return ResultUtils.success(result);
     }
 }
