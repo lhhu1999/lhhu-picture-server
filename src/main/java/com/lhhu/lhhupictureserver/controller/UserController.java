@@ -1,7 +1,9 @@
 package com.lhhu.lhhupictureserver.controller;
 
+import com.lhhu.lhhupictureserver.annotation.AuthCheck;
 import com.lhhu.lhhupictureserver.common.BaseResponse;
 import com.lhhu.lhhupictureserver.common.ResultUtils;
+import com.lhhu.lhhupictureserver.constant.UserConstant;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
 import com.lhhu.lhhupictureserver.model.dto.UserLoginRequest;
@@ -24,6 +26,7 @@ public class UserController {
     /**
      * 用户注册
      */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
