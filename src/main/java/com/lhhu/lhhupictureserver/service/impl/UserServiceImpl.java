@@ -1,6 +1,8 @@
 package com.lhhu.lhhupictureserver.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,9 +10,11 @@ import com.lhhu.lhhupictureserver.constant.UserConstant;
 import com.lhhu.lhhupictureserver.exception.BusinessException;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
+import com.lhhu.lhhupictureserver.model.dto.user.UserQueryRequest;
 import com.lhhu.lhhupictureserver.model.entity.User;
 import com.lhhu.lhhupictureserver.model.enums.UserRoleEnum;
 import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
+import com.lhhu.lhhupictureserver.model.vo.UserVO;
 import com.lhhu.lhhupictureserver.service.UserService;
 import com.lhhu.lhhupictureserver.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -119,21 +126,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
-     * 复制属性
-     * @param user
-     * @return
-     */
-    @Override
-    public LoginUserVO getLoginUserVO(User user) {
-        if (user == null) {
-            return null;
-        }
-        LoginUserVO loginUserVO = new LoginUserVO();
-        BeanUtil.copyProperties(user, loginUserVO);
-        return loginUserVO;
-    }
-
-    /**
      * 获取当前登录用户
      * @param request
      * @return
@@ -155,9 +147,52 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
+     * 复制属性
+     * @param user
+     * @return 脱敏后用户登录信息
+     */
+    @Override
+    public LoginUserVO getLoginUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        LoginUserVO loginUserVO = new LoginUserVO();
+        BeanUtil.copyProperties(user, loginUserVO);
+        return loginUserVO;
+    }
+
+    /**
+     * 复制属性
+     * @param user
+     * @return 脱敏后用户信息
+     */
+    @Override
+    public UserVO getUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserVO UserVO = new UserVO();
+        BeanUtil.copyProperties(user, UserVO);
+        return UserVO;
+    }
+
+    /**
+     * 复制属性
+     * @param userList
+     * @return 脱敏后用户信息列表
+     */
+    @Override
+    public List<UserVO> getUserVOList(List<User> userList) {
+        if(CollUtil.isEmpty(userList)){
+            return new ArrayList<>();
+        }
+        return userList.stream().map(this::getUserVO).collect(Collectors.toList());
+    }
+
+    /**
      * 用户退出登录
      * @param request
-     * @return
+     * @return 是否成功退出
      */
     @Override
     public boolean userLoginOut(HttpServletRequest request) {
@@ -168,6 +203,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
         return true;
+    }
+
+    /**
+     * 根据不同的用户查询条件生成不同的查询体
+     * @param userQueryRequest
+     * @return 对应查询体
+     */
+    @Override
+    public QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if(userQueryRequest == null){
+            throw  new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
+        }
+
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userName = userQueryRequest.getUserName();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userRole = userQueryRequest.getUserRole();
+
+        String orderBy = userQueryRequest.getOrderBy();
+        String orderType = userQueryRequest.getOrderType();
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ObjUtil.isNotNull(id), "id", id);
+        queryWrapper.like(ObjUtil.isNotNull(userAccount), "userAccount", userAccount);
+        queryWrapper.like(ObjUtil.isNotNull(userName), "userName", userName);
+        queryWrapper.like(ObjUtil.isNotNull(userProfile), "userProfile", userProfile);
+        queryWrapper.eq(ObjUtil.isNotNull(userRole), "userRole", userRole);
+
+        queryWrapper.orderBy(ObjUtil.isNotEmpty(orderBy), orderType.equals("asc"), orderBy);
+        return queryWrapper;
     }
 }
 

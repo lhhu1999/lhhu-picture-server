@@ -1,10 +1,14 @@
 package com.lhhu.lhhupictureserver.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.lhhu.lhhupictureserver.model.dto.user.UserQueryRequest;
 import com.lhhu.lhhupictureserver.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
+import com.lhhu.lhhupictureserver.model.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author Huaihu Li
@@ -38,13 +42,6 @@ public interface UserService extends IService<User> {
     String getEncryptPassword(String userPassword);
 
     /**
-     * 属性复制
-     * @param user
-     * @return
-     */
-    LoginUserVO getLoginUserVO(User user);
-
-    /**
      * 获取当前登录用户
      * @param request
      * @return
@@ -52,9 +49,37 @@ public interface UserService extends IService<User> {
     User getLoginUser(HttpServletRequest request);
 
     /**
+     * 属性复制
+     * @param user
+     * @return 脱敏后用户登录信息
+     */
+    LoginUserVO getLoginUserVO(User user);
+
+    /**
+     * 属性复制
+     * @param user
+     * @return 脱敏后用户信息
+     */
+    UserVO getUserVO(User user);
+
+    /**
+     * 属性复制
+     * @param userList
+     * @return 脱敏后用户信息列表
+     */
+    List<UserVO> getUserVOList(List<User> userList);
+
+    /**
      * 用户退出登录
      * @param request
      * @return
      */
     boolean userLoginOut(HttpServletRequest request);
+
+    /**
+     * 根据不同的用户查询条件生成不同的查询体
+     * @param userQueryRequest
+     * @return 对应查询体
+     */
+    QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
 }

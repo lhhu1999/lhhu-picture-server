@@ -1,15 +1,21 @@
 package com.lhhu.lhhupictureserver.controller;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.lhhu.lhhupictureserver.annotation.AuthCheck;
 import com.lhhu.lhhupictureserver.common.BaseResponse;
+import com.lhhu.lhhupictureserver.common.DeleteRequest;
 import com.lhhu.lhhupictureserver.common.ResultUtils;
 import com.lhhu.lhhupictureserver.constant.UserConstant;
+import com.lhhu.lhhupictureserver.exception.BusinessException;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
-import com.lhhu.lhhupictureserver.model.dto.UserLoginRequest;
-import com.lhhu.lhhupictureserver.model.dto.UserRegisterRequest;
+import com.lhhu.lhhupictureserver.model.dto.user.UserAddRequest;
+import com.lhhu.lhhupictureserver.model.dto.user.UserLoginRequest;
+import com.lhhu.lhhupictureserver.model.dto.user.UserRegisterRequest;
+import com.lhhu.lhhupictureserver.model.dto.user.UserUpdateRequest;
 import com.lhhu.lhhupictureserver.model.entity.User;
 import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
+import com.lhhu.lhhupictureserver.model.vo.UserVO;
 import com.lhhu.lhhupictureserver.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +32,6 @@ public class UserController {
     /**
      * 用户注册
      */
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
@@ -68,4 +73,76 @@ public class UserController {
         boolean result = userService.userLoginOut(request);
         return ResultUtils.success(result);
     }
+
+    /**
+     * 创建用户， 仅管理员
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @PostMapping("/add")
+    public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
+        ThrowUtils.throwIf(userAddRequest == null, ErrorCode.PARAMS_ERROR);
+        User user = new User();
+        BeanUtil.copyProperties(userAddRequest, user);
+        // 设置默认密码
+        final String DEFAULT_PASSWORD = "DEF123456";
+        String encryptPassword = userService.getEncryptPassword(DEFAULT_PASSWORD);
+        user.setUserPassword(encryptPassword);
+        // 插入数据库
+        boolean result = userService.save(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(user.getId());
+    }
+
+    /**
+     * 根据ID获取用户， 仅管理员
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @GetMapping("/get")
+    public BaseResponse<User> getUserById(Long id) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+        User user = userService.getById(id);
+        ThrowUtils.throwIf(user  == null, ErrorCode.NOT_FOUND_ERROR);
+        return ResultUtils.success(user);
+    }
+
+    /**
+     * 根据ID获取脱敏后用户,仅限管理员
+     */
+    @GetMapping("/get/vo")
+    public BaseResponse<UserVO> getUserVOById(Long id) {
+        BaseResponse<User> response = getUserById(id);
+        User user = response.getData();
+        return ResultUtils.success(userService.getUserVO(user));
+    }
+
+    /**
+     * 删除用户， 仅管理员
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
+        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        boolean result = userService.removeById(deleteRequest.getId());
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 更新用户， 仅管理员
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @PostMapping("/update")
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+        if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User user = new User();
+        BeanUtil.copyProperties(userUpdateRequest, user);
+        // 更新数据库
+        boolean result = userService.updateById(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
 }

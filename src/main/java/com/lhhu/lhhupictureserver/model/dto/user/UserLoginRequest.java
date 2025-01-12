@@ -1,4 +1,4 @@
-package com.lhhu.lhhupictureserver.model.dto;
+package com.lhhu.lhhupictureserver.model.dto.user;
 
 import lombok.Data;
 
