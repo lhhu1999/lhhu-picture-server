@@ -1,6 +1,7 @@
 package com.lhhu.lhhupictureserver.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lhhu.lhhupictureserver.annotation.AuthCheck;
 import com.lhhu.lhhupictureserver.common.BaseResponse;
 import com.lhhu.lhhupictureserver.common.DeleteRequest;
@@ -9,10 +10,7 @@ import com.lhhu.lhhupictureserver.constant.UserConstant;
 import com.lhhu.lhhupictureserver.exception.BusinessException;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
-import com.lhhu.lhhupictureserver.model.dto.user.UserAddRequest;
-import com.lhhu.lhhupictureserver.model.dto.user.UserLoginRequest;
-import com.lhhu.lhhupictureserver.model.dto.user.UserRegisterRequest;
-import com.lhhu.lhhupictureserver.model.dto.user.UserUpdateRequest;
+import com.lhhu.lhhupictureserver.model.dto.user.*;
 import com.lhhu.lhhupictureserver.model.entity.User;
 import com.lhhu.lhhupictureserver.model.vo.LoginUserVO;
 import com.lhhu.lhhupictureserver.model.vo.UserVO;
@@ -21,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 
 @RestController
@@ -143,6 +142,28 @@ public class UserController {
         boolean result = userService.updateById(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 分页获取脱敏后用户列表， 仅管理员
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @PostMapping("/list/page/vo")
+    public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest) {
+        ThrowUtils.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR);
+
+        // 获取用户列表页面
+        int currentPage = userQueryRequest.getCurrentPage();
+        int pageSize = userQueryRequest.getPageSize();
+        Page<User> userPage = userService.page(new Page<>(currentPage, pageSize), userService.getQueryWrapper(userQueryRequest));
+
+        // 转化为脱敏后用户列表
+        List<UserVO> userVOList = userService.getUserVOList(userPage.getRecords());
+
+        //封装为Page
+        Page<UserVO> userVOPage = new Page<>(currentPage, pageSize, userPage.getTotal());
+        userVOPage.setRecords(userVOList);
+        return ResultUtils.success(userVOPage);
     }
 
 }
