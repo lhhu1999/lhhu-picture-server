@@ -29,6 +29,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### 腾讯云cos ###
+application-local.yml
+
 ### VS Code ###
 .vscode/
 ### Java template

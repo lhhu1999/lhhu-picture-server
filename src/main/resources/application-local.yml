@@ -1,0 +1,8 @@
+# 对象存储配置（需要从腾讯云获取）
+cos:
+  client:
+    host: https://lhhu-1305000665.cos.ap-shanghai.myqcloud.com
+    secretId: AKIDkN5yjx1ynRtBHE0ZzFLH2d8SZUHvRqAL
+    secretKey: 3tW2OYXM3f8RejfQ1RjrobEk5EGMF1d4
+    region: ap-shanghai
+    bucket: lhhu-1305000665
