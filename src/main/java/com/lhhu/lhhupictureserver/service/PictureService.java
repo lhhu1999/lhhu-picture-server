@@ -3,6 +3,7 @@ package com.lhhu.lhhupictureserver.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lhhu.lhhupictureserver.model.dto.picture.PictureQueryRequest;
+import com.lhhu.lhhupictureserver.model.dto.picture.PictureReviewRequest;
 import com.lhhu.lhhupictureserver.model.dto.picture.PictureUploadRequest;
 import com.lhhu.lhhupictureserver.model.dto.user.UserQueryRequest;
 import com.lhhu.lhhupictureserver.model.entity.Picture;
@@ -54,5 +55,20 @@ public interface PictureService extends IService<Picture> {
      * @return 对应查询体
      */
     QueryWrapper<Picture> getQueryWrapper(PictureQueryRequest pictureQueryRequest);
+
+    /**
+     * 图片审核
+     * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 填充审核参数
+     * @param picture
+     * @param loginUser
+     */
+    void fillReviewParams(Picture picture, User loginUser);
+
 
 }
