@@ -22,12 +22,12 @@ import javax.servlet.http.HttpServletRequest;
 public interface PictureService extends IService<Picture> {
     /**
      * 更新或者新增图片，上传云存储并写入数据库
-     * @param file
+     * @param inputSource 文件输入源
      * @param pictureUploadRequest
      * @param loginUser
      * @return
      */
-    PictureVO uploadPicture(MultipartFile file, PictureUploadRequest pictureUploadRequest, User loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
     /**
      * 获取图片的封装对象

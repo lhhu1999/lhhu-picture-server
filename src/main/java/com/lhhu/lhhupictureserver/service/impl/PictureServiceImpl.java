@@ -10,6 +10,9 @@ import com.lhhu.lhhupictureserver.exception.BusinessException;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
 import com.lhhu.lhhupictureserver.exception.ThrowUtils;
 import com.lhhu.lhhupictureserver.manager.FileManager;
+import com.lhhu.lhhupictureserver.manager.upload.FilePictureUpload;
+import com.lhhu.lhhupictureserver.manager.upload.PictureUploadTemplate;
+import com.lhhu.lhhupictureserver.manager.upload.UrlPictureUpload;
 import com.lhhu.lhhupictureserver.model.dto.file.UploadPictureResult;
 import com.lhhu.lhhupictureserver.model.dto.picture.PictureQueryRequest;
 import com.lhhu.lhhupictureserver.model.dto.picture.PictureReviewRequest;
@@ -44,12 +47,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     implements PictureService{
 
     @Resource
-    private FileManager fileManager;
-    @Resource
     private UserService userService;
+    @Resource
+    private FilePictureUpload filePictureUpload;
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
 
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 判断是更新图片还是新增图片
         Long pictureId = null;
@@ -67,7 +72,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 上传图片，得到信息
         // 按照用户id划分目录
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
-        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        // 根据数据源类型区分上传方式
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if (inputSource instanceof String) {
+            pictureUploadTemplate = urlPictureUpload;
+        }
+        UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
 
         // 构造要写入数据库的图片信息
         Picture picture = new Picture();
