@@ -3,6 +3,8 @@ package com.lhhu.lhhupictureserver.controller;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.lhhu.lhhupictureserver.annotation.AuthCheck;
 import com.lhhu.lhhupictureserver.common.BaseResponse;
 import com.lhhu.lhhupictureserver.common.DeleteRequest;
@@ -29,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -47,6 +50,14 @@ public class PictureController {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    private final Cache<String, String> LOCAL_CACHE =
+            Caffeine.newBuilder().initialCapacity(1024)
+                    .maximumSize(10000L)
+                    // 缓存 5 分钟移除
+                    .expireAfterWrite(Duration.ofMinutes(5))
+                    .build();
+
 
     /**
      * 图片上传（可便后重新上传）
@@ -210,27 +221,39 @@ public class PictureController {
         // 构建缓存 key
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
-        String redisKey = "lhhupicture:listPictureVOByPage:" + hashKey;
-        // 从 Redis 缓存中查询
-        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
-        String cachedValue = valueOps.get(redisKey);
+//        String redisKey = "lhhupicture:listPictureVOByPage:" + hashKey;
+        String catchKey = "lhhupicture:listPictureVOByPage:" + hashKey;    // 2.1
+
+        // 1.先查本地缓存
+        String cachedValue = LOCAL_CACHE.getIfPresent(catchKey);
         if (cachedValue != null) {
             // 如果缓存命中，返回结果
             Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
             return ResultUtils.success(cachedPage);
         }
 
-        // 查询数据库
+        // 2.本地缓存未命中，从 Redis 分布式缓存中查询
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
+        cachedValue = valueOps.get(catchKey);
+        if (cachedValue != null) {
+            // 如果缓存命中，更新本地缓存，并返回结果
+            LOCAL_CACHE.put(catchKey, cachedValue);
+            Page<PictureVO> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachedPage);
+        }
+
+        // 3. 都没命中，查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
         // 获取封装类
         Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage);
 
-        // 存入 Redis 缓存
+        // 4.存入本地缓存和redis分布式缓存
         String cacheValue = JSONUtil.toJsonStr(pictureVOPage);
+        LOCAL_CACHE.put(catchKey, cacheValue);
         // 5 - 10 分钟随机过期，防止雪崩
         int cacheExpireTime = 300 +  RandomUtil.randomInt(0, 300);
-        valueOps.set(redisKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
+        valueOps.set(catchKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
 
         // 返回结果
         return ResultUtils.success(pictureVOPage);
