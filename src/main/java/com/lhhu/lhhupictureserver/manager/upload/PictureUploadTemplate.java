@@ -5,15 +5,9 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpStatus;
-import cn.hutool.http.HttpUtil;
-import cn.hutool.http.Method;
 import com.lhhu.lhhupictureserver.config.CosClientConfig;
 import com.lhhu.lhhupictureserver.exception.BusinessException;
 import com.lhhu.lhhupictureserver.exception.ErrorCode;
-import com.lhhu.lhhupictureserver.exception.ThrowUtils;
 import com.lhhu.lhhupictureserver.manager.CosManager;
 import com.lhhu.lhhupictureserver.model.dto.file.UploadPictureResult;
 import com.qcloud.cos.model.PutObjectResult;
@@ -22,14 +16,9 @@ import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import com.qcloud.cos.model.ciModel.persistence.OriginalInfo;
 import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -70,7 +59,11 @@ public abstract class PictureUploadTemplate {
             List<CIObject> objectList = processResults.getObjectList();
             if (CollUtil.isNotEmpty(objectList)) {
                 CIObject compressedCIObject = objectList.get(0);
-                return buildResult(originalFilename, compressedCIObject);
+                CIObject thumbnailCIObject = compressedCIObject;
+                if (objectList.size() > 1) {
+                    thumbnailCIObject = objectList.get(1);
+                }
+                return buildResult(originalFilename, compressedCIObject, thumbnailCIObject);
             }
 
             // 5.提取图片信息,返回封装结果
@@ -121,11 +114,13 @@ public abstract class PictureUploadTemplate {
 
     /**
      * 封装压缩后的返回结果
+     *
      * @param originalFilename
      * @param compressedCIObject
+     * @param thumbnailCIObject
      * @return
      */
-    private UploadPictureResult buildResult(String originalFilename, CIObject compressedCIObject) {
+    private UploadPictureResult buildResult(String originalFilename, CIObject compressedCIObject, CIObject thumbnailCIObject) {
         int picWidth = compressedCIObject.getWidth();
         int picHeight = compressedCIObject.getHeight();
         double picScale = NumberUtil.round(picWidth * 1.0 / picHeight, 2).doubleValue();
@@ -137,7 +132,10 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicScale(picScale);
         uploadPictureResult.setPicFormat(compressedCIObject.getFormat());
         uploadPictureResult.setPicSize(compressedCIObject.getSize().longValue());
+        // 设置原图地址
         uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + compressedCIObject.getKey());
+        // 设置缩略图地址
+        uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnailCIObject.getKey());
         return uploadPictureResult;
     }
 
