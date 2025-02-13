@@ -43,7 +43,7 @@ public abstract class PictureUploadTemplate {
         // 2.图片上传地址
         String uuid = RandomUtil.randomString(8);
         String originalFilename = getOriginalFilename(inputSource);
-        String uploadFilename = String.format("%s_%s.%s", DateUtil.formatDate(new Date()), uuid, FileUtil.getSuffix(originalFilename));
+        String uploadFilename = String.format("%s_%s.%s", DateUtil.formatDate(new Date()), uuid, "jpg");
         String uploadPath = String.format("/%s/%s", uploadPathPrefix, uploadFilename);
         
         File file = null;

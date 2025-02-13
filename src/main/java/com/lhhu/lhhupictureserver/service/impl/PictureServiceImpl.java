@@ -83,6 +83,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 根据数据源类型区分上传方式
         PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
         if (inputSource instanceof String) {
+            System.out.println("??????????????"+inputSource);
             pictureUploadTemplate = urlPictureUpload;
         }
         UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);

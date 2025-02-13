@@ -60,7 +60,7 @@ public class CosManager {
         // 规则2，生成缩略图, 仅对50kb以上文件处理
         if (file.length() > 5 * 1024) {
             System.out.println(key);
-            String thumbnailKey = FileUtil.mainName(key) + "_thumbnail." + FileUtil.getSuffix(key);
+            String thumbnailKey = FileUtil.mainName(key) + "_thumbnail" + ".png";
             System.out.println('2'+thumbnailKey);
             PicOperations.Rule thumbnailRule = new PicOperations.Rule();
             thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s", 256,256));
