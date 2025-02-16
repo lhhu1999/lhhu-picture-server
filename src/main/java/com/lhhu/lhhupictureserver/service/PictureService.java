@@ -2,10 +2,8 @@ package com.lhhu.lhhupictureserver.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.lhhu.lhhupictureserver.model.dto.picture.PictureQueryRequest;
-import com.lhhu.lhhupictureserver.model.dto.picture.PictureReviewRequest;
-import com.lhhu.lhhupictureserver.model.dto.picture.PictureUploadByBatchRequest;
-import com.lhhu.lhhupictureserver.model.dto.picture.PictureUploadRequest;
+import com.lhhu.lhhupictureserver.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.lhhu.lhhupictureserver.model.dto.picture.*;
 import com.lhhu.lhhupictureserver.model.dto.user.UserQueryRequest;
 import com.lhhu.lhhupictureserver.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -79,6 +77,17 @@ public interface PictureService extends IService<Picture> {
      */
     Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
 
+    /**
+     * 创建扩图任务
+     * @param createPictureOutPaintingTaskRequest
+     * @param loginUser
+     */
+    CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser);
 
-
+    /**
+     * 校验图片权限
+     * @param loginUser
+     * @param picture
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
 }

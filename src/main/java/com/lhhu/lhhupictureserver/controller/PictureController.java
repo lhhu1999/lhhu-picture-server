@@ -1,11 +1,16 @@
 package com.lhhu.lhhupictureserver.controller;
 
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.lhhu.lhhupictureserver.annotation.AuthCheck;
+import com.lhhu.lhhupictureserver.api.aliyunai.AliYunAiApi;
+import com.lhhu.lhhupictureserver.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.lhhu.lhhupictureserver.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.lhhu.lhhupictureserver.api.aliyunai.model.GetOutPaintingTaskResponse;
 import com.lhhu.lhhupictureserver.common.BaseResponse;
 import com.lhhu.lhhupictureserver.common.DeleteRequest;
 import com.lhhu.lhhupictureserver.common.ResultUtils;
@@ -23,6 +28,7 @@ import com.lhhu.lhhupictureserver.service.PictureService;
 import com.lhhu.lhhupictureserver.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
@@ -57,6 +63,8 @@ public class PictureController {
                     // 缓存 5 分钟移除
                     .expireAfterWrite(Duration.ofMinutes(5))
                     .build();
+    @Resource
+    private AliYunAiApi aliYunAiApi;
 
 
     /**
@@ -314,5 +322,30 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         pictureService.doPictureReview(pictureReviewRequest, loginUser);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 创建AI扩图任务
+     */
+    @PostMapping("/out_painting/create_task")
+    public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
+            @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTask,
+            HttpServletRequest request) {
+        if (createPictureOutPaintingTask == null || createPictureOutPaintingTask.getPictureId() == null ) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        CreateOutPaintingTaskResponse response = pictureService.createPictureOutPaintingTask(createPictureOutPaintingTask, loginUser);
+        return ResultUtils.success(response);
+    }
+
+    /**
+     * 获取扩图任务结果
+     */
+    @GetMapping("/out_painting/get_task")
+    public BaseResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
+        ThrowUtils.throwIf(StrUtil.isBlank(taskId), ErrorCode.PARAMS_ERROR);
+        GetOutPaintingTaskResponse response = aliYunAiApi.getOutPaintingTask(taskId);
+        return ResultUtils.success(response);
     }
 }
