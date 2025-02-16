@@ -2,6 +2,11 @@
 ### 后端：SpringBoot + Redis + COS + AI
 ### 前端：Vue3 + Ant Design
 
+### 核心功能：
+    1.支持用户注册、图片上传、图片检索和下载。
+    2.支持管理员对用户上传图片的审核功能，可以根据标签批量抓取图片。
+    3.支持图片旋转和裁切编辑，支持AI扩图功能。
+
 #### 1.系统主页
 <p align="center">
 <img src="https://github.com/user-attachments/assets/8a31199b-dda4-4637-9d4a-a37297621631" width="500">
